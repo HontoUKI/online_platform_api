@@ -44,29 +44,29 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         iin: str = payload.get("sub")
         if not iin:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Вы не авторизованы")
     except jwt.PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Вы не авторизованы")
 
     async with async_session() as db:
         result = await db.execute(select(User).where(User.iin == iin))
         user = result.scalars().first()
 
         if user is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
         return user
 
 def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: admin only")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ воспрещен: только для администраторов")
     return current_user
 
 def get_current_teacher_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in ("teacher", "admin"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: teacher only")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ воспрещен: только для преподавателей")
     return current_user
 
 def get_current_student_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "student":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: student only")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ воспрещен:: только для студентов")
     return current_user

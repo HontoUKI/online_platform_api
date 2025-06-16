@@ -131,7 +131,7 @@ async def get_group_by_id(db: AsyncSession, group_id: int) -> models.Group:
     result = await db.execute(select(models.Group).where(models.Group.id == group_id))
     group = result.scalars().first()
     if not group:
-        raise HTTPException(status_code=404, detail="Group not found")
+        raise HTTPException(status_code=404, detail="Группа не найдена")
     return group
 
 

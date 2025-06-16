@@ -34,13 +34,13 @@ async def login(request: schemas.LoginRequest, db: AsyncSession = Depends(get_as
     user = await crud.get_user_by_iin(db, request.iin)
     if not user:
         _track_failed_attempt(iin)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect IIN or password")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неправильный ИИН или пароль")
 
     await db.refresh(user)
 
     if not verify_password(request.password, user.hashed_password):
         _track_failed_attempt(iin)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect IIN or password")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неправильный ИИН или пароль")
 
     # Успешный вход — очищаем попытки
     if iin in attempts_cache:

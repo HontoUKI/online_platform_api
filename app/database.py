@@ -15,13 +15,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Проверка на наличие строки подключения
 if DATABASE_URL is None:
-    logging.error("DATABASE_URL is not set in the environment variables.")
+    logging.error("DATABASE_URL не выставлен в переменный окружения")
     exit(1)
 
 # Создание асинхронного движка SQLAlchemy
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,         # Установить True для вывода SQL-запросов в консоль (отладка)
+    echo=False,         # Установить True для вывода SQL-запросов в консоль (отладка)
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,

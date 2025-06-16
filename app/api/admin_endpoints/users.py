@@ -24,5 +24,5 @@ async def admin_change_user_password(
 ):
     user = await get_user_by_iin(db, payload.user_iin)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
     await update_user_password(db, user, payload.new_password)

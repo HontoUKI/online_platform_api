@@ -75,7 +75,7 @@ async def assign_group_to_module(db: AsyncSession, group_id: int, module_id: int
     module = module_result.scalar_one_or_none()
 
     if not group or not module:
-        raise HTTPException(status_code=404, detail="Group or Module not found")
+        raise HTTPException(status_code=404, detail="Группа или Модуль не найдены")
 
     if group not in module.groups:
         module.groups.append(group)
@@ -99,10 +99,10 @@ async def assign_teacher_to_module(db: AsyncSession, module_id: int, teacher_iin
 
 
     if not module or not teacher:
-        raise HTTPException(status_code=404, detail="Subject or Teacher not found")
+        raise HTTPException(status_code=404, detail="Дисциплина или Преподаватель не найдены")
 
     if teacher.role != "teacher":
-        raise HTTPException(status_code=400, detail="User is not a teacher")
+        raise HTTPException(status_code=400, detail="Пользователь не является преподавателем")
     
     if teacher not in module.teachers:
         module.teachers.append(teacher)
@@ -125,10 +125,10 @@ async def assign_teacher_to_subject(db: AsyncSession, subject_id: int, teacher_i
     
 
     if not subject or not teacher:
-        raise HTTPException(status_code=404, detail="Subject or Teacher not found")
+        raise HTTPException(status_code=404, detail="Дисциплина или Преподаватель не найдены")
 
     if teacher.role != "teacher":
-        raise HTTPException(status_code=400, detail="User is not a teacher")
+        raise HTTPException(status_code=400, detail="Пользователь не является преподавателем")
 
     subject.teacher_id = teacher.id
     await db.commit()
