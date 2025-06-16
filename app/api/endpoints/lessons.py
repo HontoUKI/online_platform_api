@@ -20,10 +20,12 @@ async def add_lesson(
     db: AsyncSession = Depends(get_async_db),
     current_teacher: models.User = Depends(get_current_teacher_user)
 ):
+    # Проверка, что преподаватель владеет предметом
     subject = await db.get(models.Subject, subject_id)
     if not subject or subject.teacher_id != current_teacher.id:
         raise HTTPException(status_code=403, detail="Нет доступа к предмету")
 
+    # Создаём новый урок
     lesson_dict = lesson_data.dict()
     lesson_dict.pop("test_id", None)
     lesson = models.Lesson(**lesson_dict, subject_id=subject_id)
@@ -32,7 +34,8 @@ async def add_lesson(
     await db.commit()
     await db.refresh(lesson)
 
-    if lesson_data.type == "test" and lesson_data.test_id:
+    # Обрабатываем привязку теста
+    if lesson_data.type == "Тест" and lesson_data.test_id:
         test = await db.get(models.Test, lesson_data.test_id)
         if not test:
             raise HTTPException(status_code=404, detail="Тест не найден")
@@ -40,6 +43,8 @@ async def add_lesson(
         await db.commit()
 
     return lesson
+
+
 
 @router.delete("/{lesson_id}")
 async def delete_lesson(
@@ -161,15 +166,20 @@ async def get_lesson_file_submissions(
     lesson_id: int,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_async_db),
-    current_teacher=Depends(get_current_teacher_user)
+    current_user: models.User = Depends(get_current_user)
 ):
     lesson = await db.get(models.Lesson, lesson_id)
     if not lesson:
         raise HTTPException(404, detail="Урок не найден")
 
     subject = await db.get(models.Subject, lesson.subject_id)
-    if not subject or subject.teacher_id != current_teacher.id:
+    if not subject:
+        raise HTTPException(404, detail="Предмет не найден")
+
+    if current_user.role == "teacher" and subject.teacher_id != current_user.id:
         raise HTTPException(403, detail="Нет доступа к уроку")
+    elif current_user.role != "admin" and current_user.role != "teacher":
+        raise HTTPException(403, detail="Недостаточно прав")
 
     result = await db.execute(
         select(models.LessonSubmission)
@@ -190,20 +200,24 @@ async def get_lesson_file_submissions(
 
     return submissions
 
-
 @router.get("/{lesson_id}/submissions/tests", response_model=List[schemas.TestResultOut])
 async def get_lesson_test_results(
     lesson_id: int,
     db: AsyncSession = Depends(get_async_db),
-    current_teacher=Depends(get_current_teacher_user)
+    current_user: models.User = Depends(get_current_user)
 ):
     lesson = await db.get(models.Lesson, lesson_id)
     if not lesson:
         raise HTTPException(404, detail="Урок не найден")
 
     subject = await db.get(models.Subject, lesson.subject_id)
-    if not subject or subject.teacher_id != current_teacher.id:
+    if not subject:
+        raise HTTPException(404, detail="Предмет не найден")
+
+    if current_user.role == "teacher" and subject.teacher_id != current_user.id:
         raise HTTPException(403, detail="Нет доступа к уроку")
+    elif current_user.role != "admin" and current_user.role != "teacher":
+        raise HTTPException(403, detail="Недостаточно прав")
 
     result = await db.execute(
         select(models.Result)
@@ -216,6 +230,7 @@ async def get_lesson_test_results(
         r.student_name = r.user.full_name
 
     return results
+
 
 @router.get("/{lesson_id}/my-submissions", response_model=List[schemas.SubmissionOut])
 async def get_my_submissions(

@@ -44,6 +44,38 @@ async def get_groups_for_module(
     current_user: models.User = Depends(get_current_user)
 ):
     return await crud.get_groups_for_module(db, module_id)
+# Все модули для админа
+@router.get("/admin-modules", response_model=List[schemas.ModuleResponse])
+async def get_all_modules_for_admin(
+    db: AsyncSession = Depends(get_async_db),
+    current_admin: models.User = Depends(get_current_admin_user)
+):
+    result = await db.execute(
+        select(models.Module)
+        .options(
+            selectinload(models.Module.subjects)
+            .selectinload(models.Subject.lessons)
+        )
+    )
+    return result.scalars().all()
+
+@router.get("/admin-modules/{module_id}", response_model=schemas.ModuleResponse)
+async def get_admin_module_details(
+    module_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    current_admin: models.User = Depends(get_current_admin_user)
+):
+    module = await db.get(models.Module, module_id)
+
+    if not module:
+        raise HTTPException(status_code=404, detail="Модуль не найден")
+
+    # Подгружаем subjects → lessons вручную, чтобы response_model корректно сериализовал
+    await db.refresh(module, ["subjects"])
+    for subject in module.subjects:
+        await db.refresh(subject, ["lessons"])
+
+    return module
 
 
 # Получить модули, доступные текущему пользователю

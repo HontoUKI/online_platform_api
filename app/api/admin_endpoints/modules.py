@@ -77,8 +77,6 @@ async def get_module_details(
 
 
 # Предметы (только админ)
-
-# routes/admin/modules.py
 @router.post("/{module_id}/subjects", response_model=schemas.Subject)
 async def create_subject(
     module_id: int,
@@ -97,9 +95,7 @@ async def update_subject(
 ):
     return await crud.update_subject(db, subject_id, subject_in)
 
-
 # Уроки (только назначенный преподаватель)
-
 @router.post("/subjects/{subject_id}/lessons", response_model=schemas.LessonCreate)
 async def add_lesson(
     subject_id: int,
