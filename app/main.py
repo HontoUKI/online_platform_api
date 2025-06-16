@@ -33,9 +33,6 @@ def create_app() -> FastAPI:
     #Старт
     @app.on_event("startup")
     async def startup_event():
-        for route in app.routes:
-            print(route.path)
-
         await on_startup()
 
     # Раздача папки static
