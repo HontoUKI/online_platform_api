@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app import crud, schemas
 from app.database import get_async_db
-from app.utils.auth import verify_password, create_access_token
+from app.utils.auth import verify_password, create_access_token, get_current_user
+from app.models import User
 from fastapi import Request
 from datetime import datetime, timedelta
 
@@ -61,6 +62,9 @@ async def login(request: schemas.LoginRequest, db: AsyncSession = Depends(get_as
             "short_name": user_data.short_name,
         }
     }
+@router.get("/check")
+async def check_auth(current_user: User = Depends(get_current_user)):
+    return {"status": "ok", "user": {"iin": current_user.iin, "role": current_user.role}}
 
 # 🔐 Локальная фиксация неуспешной попытки
 def _track_failed_attempt(iin: str):

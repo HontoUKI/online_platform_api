@@ -4,16 +4,33 @@ from app.database import get_async_db
 from app.utils.auth import get_current_admin_user
 from app.schemas import UserCreate, User, PasswordResetRequest
 from app.crud import create_user, get_user_by_iin, update_user_password
+from app.models import User as UserModel
+from sqlalchemy.future import select
 
 router = APIRouter(tags=["admin_users"])
 
 @router.post("/", response_model=User)
 async def admin_create_user(
-    user_iin: UserCreate,
+    user_data: UserCreate,
     db: AsyncSession = Depends(get_async_db),
     current_admin=Depends(get_current_admin_user),
 ):
-    user = await create_user(db, user_iin)
+    # Проверка ИИН
+    existing_iin = await db.execute(
+        select(UserModel).where(UserModel.iin == user_data.iin)
+    )
+    if existing_iin.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Пользователь с таким ИИН уже существует")
+
+    # Проверка телефона
+    existing_phone = await db.execute(
+        select(UserModel).where(UserModel.phone == user_data.phone)
+    )
+    if existing_phone.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Номер телефона уже используется")
+
+    # Создание пользователя
+    user = await create_user(db, user_data)
     return user
 
 @router.patch("/reset_password")

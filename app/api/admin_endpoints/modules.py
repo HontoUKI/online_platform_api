@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_async_db
 from typing import List
@@ -84,7 +85,17 @@ async def create_subject(
     db: AsyncSession = Depends(get_async_db),
     current_admin: models.User = Depends(get_current_admin_user)
 ):
-    return await crud.create_subject(db, subject_data.title, module_id)
+    # Проверка: существует ли уже дисциплина с таким названием в этом модуле
+    query = select(models.Subject).where(
+        models.Subject.module_id == module_id,
+        models.Subject.title.ilike(subject_data.title.strip())  # case-insensitive сравнение
+    )
+    existing = await db.execute(query)
+    if existing.first():
+        raise HTTPException(status_code=400, detail="Данная дисциплина уже существует в этом модуле")
+
+    # Создание новой дисциплины
+    return await crud.create_subject(db, subject_data.title.strip(), module_id)
 
 @router.put("/{subject_id}/subjects", response_model=schemas.SubjectUpdate)
 async def update_subject(
