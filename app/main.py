@@ -31,7 +31,6 @@ def create_app() -> FastAPI:
     Возвращает:
         FastAPI: Настроенное приложение с подключёнными маршрутами и middleware.
     """
-    print(f"PLACE_URL = {PLACE_URL!r}")
     app = FastAPI(
         title="Онлайн Платформа Обучения",
         description="Бэкенд для онлайн-платформы с логином, регистрацией и доступом к модулям",
