@@ -14,6 +14,8 @@ from app.api.endpoints.lessons import router as lessons_router
 from app.api.endpoints.tests import router as tests_router
 from app.api.endpoints.access import router as access_router
 from app.api.endpoints.user import router as users_router
+from app.api.endpoints.files import router as files_router
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -66,6 +68,8 @@ def create_app() -> FastAPI:
     app.include_router(lessons_router, prefix="/lessons", tags=["Уроки"])
     app.include_router(tests_router, prefix="/tests", tags=["Тестирования"])
     app.include_router(users_router, prefix="/user", tags=["Пользователя"])
+    app.include_router(files_router, prefix="/files", tags=["Файлы"])
+
 
 
     @app.get("/", tags=["Пример"], summary="Главная страница", description="Возвращает приветственное сообщение.")
