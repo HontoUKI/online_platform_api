@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+import os
+from dotenv import load_dotenv
+
 from app.startup import on_startup
 
 from app.api.endpoints.login import router as login_router
@@ -13,6 +16,8 @@ from app.api.endpoints.tests import router as tests_router
 from app.api.endpoints.access import router as access_router
 from app.api.endpoints.user import router as users_router
 
+load_dotenv()
+PLACE_URL = os.getenv("PLACE_URL")
 
 def create_app() -> FastAPI:
     """
@@ -41,7 +46,7 @@ def create_app() -> FastAPI:
     # Настройка CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["do.vtghk.kz"],
+        allow_origins=[PLACE_URL],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
