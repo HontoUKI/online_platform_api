@@ -2,7 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-
+from app.crud import get_user_by_iin
+from app.models import UserRole
 from app import models
 
 
@@ -111,30 +112,25 @@ async def assign_teacher_to_module(db: AsyncSession, module_id: int, teacher_iin
 
     return teacher
 
+async def assign_teacher_to_subject(db: AsyncSession, subject_id: int, teacher_iin: str) -> models.Subject:
+    subject = await db.get(models.Subject, subject_id)
+    if not subject:
+        raise HTTPException(status_code=404, detail="Предмет не найден")
 
-async def assign_teacher_to_subject(db: AsyncSession, subject_id: int, teacher_iin: int) -> models.Subject:
-    subject_result = await db.execute(
-        select(models.Subject).where(models.Subject.id == subject_id)
-    )
-    subject = subject_result.scalar_one_or_none()
+    teacher = await get_user_by_iin(db, teacher_iin)
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Преподаватель не найден")
 
-    teacher_result = await db.execute(
-        select(models.User).where(models.User.iin == teacher_iin)
-    )
-    teacher = teacher_result.scalar_one_or_none()
-    
-
-    if not subject or not teacher:
-        raise HTTPException(status_code=404, detail="Дисциплина или Преподаватель не найдены")
-
-    if teacher.role != "teacher":
+    if teacher.role != UserRole.teacher:
         raise HTTPException(status_code=400, detail="Пользователь не является преподавателем")
 
     subject.teacher_id = teacher.id
+
     await db.commit()
     await db.refresh(subject)
 
     return subject
+
 
 
 async def check_user_access_to_module(db: AsyncSession, user: models.User, module_id: int) -> bool:

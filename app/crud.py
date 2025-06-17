@@ -50,7 +50,6 @@ async def update_user_password(db: AsyncSession, user: models.User, new_password
     await db.commit()   
 
 # Модули
-
 async def get_modules(db: AsyncSession) -> List[models.Module]:
     result = await db.execute(select(models.Module))
     return result.scalars().all()
@@ -64,6 +63,19 @@ async def get_module_with_details(db: AsyncSession, module_id: int) -> models.Mo
         .where(models.Module.id == module_id)
     )
     return result.scalars().first()
+
+async def get_modules_with_teachers(db: AsyncSession) -> List[models.Module]:
+    result = await db.execute(
+        select(models.Module)
+        .options(
+            selectinload(models.Module.subjects)
+            .selectinload(models.Subject.teacher),  # преподаватели
+            selectinload(models.Module.subjects)
+            .selectinload(models.Subject.lessons)   # уроки
+        )
+    )
+    return result.scalars().all()
+
 
 async def create_module(db: AsyncSession, module_in: schemas.ModuleCreate) -> models.Module:
     db_module = models.Module(

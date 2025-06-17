@@ -25,15 +25,14 @@ async def add_group_to_module(
     return await access.assign_group_to_module(db, data.group_id, data.module_id)
 
 
-# Привязка преподавателя к предмету
 @router.post("/admin/teacher-to-subject", response_model=schemas.SubjectResponse)
 async def add_teacher_to_subject(
     data: schemas.TeacherSubjectAccessCreate,
     db: AsyncSession = Depends(get_async_db),
     current_admin: models.User = Depends(get_current_admin_user)
 ):
-    await access.assign_teacher_to_module(db, data.module_id, data.teacher_iin)
-    return await access.assign_teacher_to_subject(db, data.subject_id, data.teacher_iin)
+    subject = await access.assign_teacher_to_subject(db, data.subject_id, data.teacher_iin)
+    return subject
 
 
 # Получить группы, у которых есть доступ к модулю

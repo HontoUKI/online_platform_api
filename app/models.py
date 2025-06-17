@@ -47,6 +47,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     photo = Column(String(255), nullable=True)
 
+    subjects = relationship("Subject", back_populates="teacher", lazy="selectin")
     teaching_modules = relationship("Module", secondary=teacher_module_table, back_populates="teachers", lazy='selectin')
     groups = relationship("Group", secondary=user_group_table, back_populates="users", lazy='selectin')
     results = relationship("Result", back_populates="user", lazy='selectin')
@@ -82,6 +83,7 @@ class Subject(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String(100), nullable=False)
 
+    teacher = relationship("User", back_populates="subjects", lazy="selectin")
     tests = relationship("Test", back_populates="subject", cascade="all, delete-orphan", lazy='selectin')
     module = relationship("Module", back_populates="subjects", lazy='selectin')
     lessons = relationship("Lesson", back_populates="subject", cascade="all, delete-orphan", lazy='selectin')

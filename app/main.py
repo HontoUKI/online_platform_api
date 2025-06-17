@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-import os
-from dotenv import load_dotenv
+from os import getenv
 
 from app.startup import on_startup
 
@@ -16,8 +15,14 @@ from app.api.endpoints.tests import router as tests_router
 from app.api.endpoints.access import router as access_router
 from app.api.endpoints.user import router as users_router
 
+from dotenv import load_dotenv
 load_dotenv()
-PLACE_URL = os.getenv("PLACE_URL")
+
+PLACE_URL = getenv("PLACE_URL", "").strip().strip('"').strip("'")
+allow_origins = (
+    ["*"] if not PLACE_URL else [url.strip() for url in PLACE_URL.split(",")]
+)
+
 
 def create_app() -> FastAPI:
     """
@@ -26,6 +31,7 @@ def create_app() -> FastAPI:
     Возвращает:
         FastAPI: Настроенное приложение с подключёнными маршрутами и middleware.
     """
+    print(f"PLACE_URL = {PLACE_URL!r}")
     app = FastAPI(
         title="Онлайн Платформа Обучения",
         description="Бэкенд для онлайн-платформы с логином, регистрацией и доступом к модулям",
@@ -46,7 +52,7 @@ def create_app() -> FastAPI:
     # Настройка CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[PLACE_URL],
+        allow_origins=allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -44,8 +44,6 @@ async def add_lesson(
 
     return lesson
 
-
-
 @router.delete("/{lesson_id}")
 async def delete_lesson(
     lesson_id: int,

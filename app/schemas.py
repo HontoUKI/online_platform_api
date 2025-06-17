@@ -358,3 +358,22 @@ class LessonFull(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SubjectWithTeacher(BaseModel):
+    id: int
+    title: str
+    teacher: Optional[User] = None
+    lessons: List[Lesson] = []
+
+    class Config:
+        from_attributes = True
+
+# Модуль с полным деревом
+class ModuleWithTeachers(BaseModel):
+    id: int
+    title: str
+    course: int  # если поле есть
+    subjects: List[SubjectWithTeacher] = []
+
+    class Config:
+        from_attributes = True

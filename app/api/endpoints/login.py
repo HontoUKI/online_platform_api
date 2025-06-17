@@ -7,6 +7,8 @@ from app.models import User
 from fastapi import Request
 from datetime import datetime, timedelta
 
+from fastapi.security import OAuth2PasswordRequestForm
+
 router = APIRouter()
 
 
@@ -62,11 +64,12 @@ async def login(request: schemas.LoginRequest, db: AsyncSession = Depends(get_as
             "short_name": user_data.short_name,
         }
     }
+
 @router.get("/check")
 async def check_auth(current_user: User = Depends(get_current_user)):
     return {"status": "ok", "user": {"iin": current_user.iin, "role": current_user.role}}
 
-# 🔐 Локальная фиксация неуспешной попытки
+# Локальная фиксация неуспешной попытки
 def _track_failed_attempt(iin: str):
     now = datetime.utcnow()
     attempt = attempts_cache.get(iin)
@@ -81,3 +84,15 @@ def _track_failed_attempt(iin: str):
         # обновляем только если достижение лимита
         if attempt["count"] >= MAX_ATTEMPTS:
             attempt["unlock_at"] = now + timedelta(minutes=LOCK_DURATION_MINUTES)
+
+@router.post("/token")
+async def login_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_async_db),
+):
+    user = await crud.get_user_by_iin(db, form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Неверный ИИН или пароль")
+
+    access_token = create_access_token(data={"sub": user.iin})
+    return {"access_token": access_token, "token_type": "bearer"}
