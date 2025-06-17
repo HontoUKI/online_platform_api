@@ -31,6 +31,7 @@ async def add_teacher_to_subject(
     db: AsyncSession = Depends(get_async_db),
     current_admin: models.User = Depends(get_current_admin_user)
 ):
+    await access.assign_teacher_to_module(db, data.module_id, data.teacher_iin)
     subject = await access.assign_teacher_to_subject(db, data.subject_id, data.teacher_iin)
     return subject
 
