@@ -29,7 +29,6 @@ teacher_module_table = Table(
     Column("teacher_id", Integer, ForeignKey("users.id"), primary_key=True),
 )
 
-
 # Перечисление ролей
 class UserRole(str, enum.Enum):
     student = "student"

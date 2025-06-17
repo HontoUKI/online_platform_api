@@ -70,12 +70,9 @@ def create_app() -> FastAPI:
     app.include_router(users_router, prefix="/user", tags=["Пользователя"])
     app.include_router(files_router, prefix="/files", tags=["Файлы"])
 
-
-
     @app.get("/", tags=["Пример"], summary="Главная страница", description="Возвращает приветственное сообщение.")
     async def read_root():
         return {"message": "Добро пожаловать на платформу!"}
-
 
     return app
 

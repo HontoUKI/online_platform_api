@@ -356,8 +356,6 @@ async def get_subjects_for_user(db: AsyncSession, user: models.User) -> List[mod
 
     return []
 
-
-
 async def remove_group_from_subject(db: AsyncSession, group_id: int, subject_id: int) -> models.Subject:
     subject = await db.get(models.Subject, subject_id)
     group = await db.get(models.Group, group_id)
