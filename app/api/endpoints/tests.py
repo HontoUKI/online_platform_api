@@ -64,7 +64,8 @@ async def update_test(test_id: int, test_data: schemas.TestCreate, db: AsyncSess
         raise HTTPException(status_code=404, detail="Тест не найден")
 
     test.title = test_data.title
-    test.subject_id = test_data.subject_id
+    if test_data.subject_id is not None:
+       test.subject_id = test_data.subject_id
     test.lesson_id = test_data.lesson_id
 
     # Удалим старые вопросы и опции
