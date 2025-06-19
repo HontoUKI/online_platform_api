@@ -66,7 +66,8 @@ async def update_test(test_id: int, test_data: schemas.TestCreate, db: AsyncSess
     test.title = test_data.title
     if test_data.subject_id is not None:
        test.subject_id = test_data.subject_id
-    test.lesson_id = test_data.lesson_id
+    if test_data.lesson_id is not None:
+       test.lesson_id = test_data.lesson_id
 
     # Удалим старые вопросы и опции
     await db.execute(delete(models.Option).where(models.Option.question_id.in_(

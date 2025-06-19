@@ -179,7 +179,7 @@ class TestBase(BaseModel):
 
 class TestCreate(BaseModel):
     title: str
-    subject_id: int
+    subject_id: Optional[int] = None
     lesson_id: Optional[int] = None
     questions: List[QuestionCreate]
 
