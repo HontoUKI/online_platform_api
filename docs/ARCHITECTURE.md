@@ -17,6 +17,7 @@ app/
   utils/         Auth, access checks and startup helpers
 migrations/      Alembic environment and versioned migrations
 static/          Served uploads (photos, lesson documents)
+tests/           pytest unit tests (auth, schemas, login throttle)
 ```
 
 ## Layers

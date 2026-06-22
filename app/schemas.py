@@ -35,7 +35,7 @@ class User(UserBase):
         if not parts:
             return ""
         initials = [f"{p[0]}." for p in parts[1:] if p]
-        return f"{parts[0]} {' '.join(initials)}"
+        return f"{parts[0]} {' '.join(initials)}".strip()
 
 class UserOut(BaseModel):
     id: int

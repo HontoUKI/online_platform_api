@@ -81,6 +81,25 @@ See [.env.example](.env.example). Key variables:
 
 Never commit the real `.env`. Only `.env.example` is tracked.
 
+## Tests
+
+Unit tests (no database required) live in `tests/` and run with pytest:
+
+```powershell
+pip install -r requirements-dev.txt
+pytest
+```
+
+They cover password hashing/JWT ([tests/test_auth.py](tests/test_auth.py)), Pydantic schemas
+and the login throttle. The Alembic migration is exercised end-to-end in CI against a real
+PostgreSQL service.
+
+## CI
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) runs on every push to `main` and on pull
+requests: installs deps, runs pytest, then applies `alembic upgrade head` against a throwaway
+PostgreSQL 16 service to verify migrations.
+
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — layers and project shape.
