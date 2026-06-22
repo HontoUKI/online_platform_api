@@ -314,12 +314,15 @@ async def assign_teacher_to_subject(db: AsyncSession, subject_id: int, teacher_i
 
     return subject
 
+# Получение модулей, доступных пользователю
 async def get_modules_for_user(db: AsyncSession, user: models.User) -> List[models.Module]:
     if user.role == models.UserRole.admin:
         result = await db.execute(select(models.Module))
         return result.scalars().all()
 
-    await db.refresh(user)  # Получаем актуальные группы пользователя
+    # Для студентов и преподавателей — через группы. Перечитываем пользователя с
+    # явной загрузкой групп, чтобы не зависеть от состояния переданной сессии.
+    user = await db.get(models.User, user.id, options=[selectinload(models.User.groups)])
     group_ids = [group.id for group in user.groups]
 
     result = await db.execute(
@@ -330,6 +333,7 @@ async def get_modules_for_user(db: AsyncSession, user: models.User) -> List[mode
     )
     return result.scalars().all()
 
+# Получение дисциплин, доступных пользователю
 async def get_subjects_for_user(db: AsyncSession, user: models.User) -> List[models.Subject]:
     if user.role == models.UserRole.admin:
         result = await db.execute(select(models.Subject))
@@ -342,7 +346,7 @@ async def get_subjects_for_user(db: AsyncSession, user: models.User) -> List[mod
         return result.scalars().all()
 
     elif user.role == models.UserRole.student:
-        await db.refresh(user)
+        user = await db.get(models.User, user.id, options=[selectinload(models.User.groups)])
         group_ids = [group.id for group in user.groups]
 
         result = await db.execute(
@@ -395,24 +399,6 @@ async def get_groups_for_module(db: AsyncSession, module_id: int) -> List[models
 
     return module.groups
 
-# Получение модулей, доступных пользователю
-async def get_modules_for_user(db: AsyncSession, user: models.User) -> List[models.Module]:
-    if user.role == "admin":
-        result = await db.execute(select(models.Module))
-        return result.scalars().all()
-
-    # Для студентов и преподавателей — через группы
-    user = await db.get(models.User, user.id, options=[selectinload(models.User.groups)])
-    group_ids = [group.id for group in user.groups]
-
-    result = await db.execute(
-        select(models.Module)
-        .join(models.Module.groups)
-        .filter(models.Group.id.in_(group_ids))
-        .distinct()
-    )
-    return result.scalars().all()
-
 async def get_module_by_id(db: AsyncSession, module_id: int, user: models.User) -> Optional[models.Module]:
     result = await db.execute(
         select(models.Module)
@@ -449,33 +435,6 @@ async def get_module_by_teacher(db: AsyncSession, module_id: int, teacher: model
         .where(models.Module.id == module_id, models.User.id == teacher.id)
     )
     return result.scalars().first()
-
-# Получение дисциплин доступных пользователю
-async def get_subjects_for_user(db: AsyncSession, user: models.User) -> List[models.Subject]:
-    if user.role == "admin":
-        result = await db.execute(select(models.Subject))
-        return result.scalars().all()
-
-    elif user.role == "teacher":
-        result = await db.execute(
-            select(models.Subject).where(models.Subject.teacher_id == user.id)
-        )
-        return result.scalars().all()
-
-    elif user.role == "student":
-        await db.refresh(user)
-        group_ids = [group.id for group in user.groups]
-
-        result = await db.execute(
-            select(models.Subject)
-            .join(models.Module)
-            .join(models.Module.groups)
-            .filter(models.Group.id.in_(group_ids))
-            .distinct()
-        )
-        return result.scalars().all()
-
-    return []
 
 # Получение общей информации о доступе групп к модулям и предметам
 async def get_access_overview(db: AsyncSession) -> dict:

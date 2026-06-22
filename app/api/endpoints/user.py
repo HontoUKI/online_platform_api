@@ -38,7 +38,7 @@ async def update_phone(
     await db.commit()
     await db.refresh(user)
 
-    user_data = User.from_orm(user)
+    user_data = User.model_validate(user)
     return {
         "user": {
             "iin": user_data.iin,
@@ -83,7 +83,7 @@ async def upload_photo(
     await db.commit()
     await db.refresh(user)
 
-    user_data = User.from_orm(user)
+    user_data = User.model_validate(user)
     return {
         "user": {
             "iin": user_data.iin,

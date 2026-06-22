@@ -5,7 +5,7 @@ from app.database import get_async_db
 from app.utils.auth import verify_password, create_access_token, get_current_user
 from app.models import User
 from fastapi import Request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -21,7 +21,7 @@ LOCK_DURATION_MINUTES = 5
 @router.post("/login")
 async def login(request: schemas.LoginRequest, db: AsyncSession = Depends(get_async_db)):
     iin = request.iin
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Проверяем наличие блокировки
     login_attempt = attempts_cache.get(iin)
@@ -50,7 +50,7 @@ async def login(request: schemas.LoginRequest, db: AsyncSession = Depends(get_as
         attempts_cache.pop(iin)
 
     access_token = create_access_token(data={"sub": user.iin})
-    user_data = schemas.User.from_orm(user)
+    user_data = schemas.User.model_validate(user)
 
     return {
         "access_token": access_token,
@@ -71,7 +71,7 @@ async def check_auth(current_user: User = Depends(get_current_user)):
 
 # Локальная фиксация неуспешной попытки
 def _track_failed_attempt(iin: str):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     attempt = attempts_cache.get(iin)
 
     if not attempt:

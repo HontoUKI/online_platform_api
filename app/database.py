@@ -25,7 +25,7 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    connect_args={"connect_timeout": 10},
+    connect_args={"timeout": 10},  # asyncpg: тайм-аут установки соединения, сек
 )
 
 # Базовый класс для всех моделей

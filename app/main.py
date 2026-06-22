@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -20,10 +23,29 @@ from app.api.endpoints.files import router as files_router
 from dotenv import load_dotenv
 load_dotenv()
 
+logger = logging.getLogger("uvicorn.error")
+
 PLACE_URL = getenv("PLACE_URL", "").strip().strip('"').strip("'")
 allow_origins = (
     ["*"] if not PLACE_URL else [url.strip() for url in PLACE_URL.split(",")]
 )
+
+# Браузеры запрещают связку wildcard-origin + credentials, поэтому при пустом PLACE_URL
+# отключаем передачу cookie/Authorization и предупреждаем — это явный признак того,
+# что список доменов не настроен.
+allow_credentials = allow_origins != ["*"]
+if not allow_credentials:
+    logger.warning(
+        "PLACE_URL не задан: CORS открыт для всех origin без credentials. "
+        "Укажите список доменов фронтенда в переменной PLACE_URL."
+    )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Инициализация при старте (создание таблиц, админ). Заменяет устаревший on_event.
+    await on_startup()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -40,13 +62,8 @@ def create_app() -> FastAPI:
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+        lifespan=lifespan,
     )
-     
-    #Старт
-    @app.on_event("startup")
-    async def startup_event():
-        await on_startup()
-
     # Раздача папки static
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -54,7 +71,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
-        allow_credentials=True,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

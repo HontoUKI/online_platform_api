@@ -1,0 +1,94 @@
+# Online Platform API
+
+Backend for an educational online platform: authentication, role-based access (admin /
+teacher / student), modules, subjects, lessons, tests and grades.
+
+Built with FastAPI and async SQLAlchemy on PostgreSQL.
+
+## Current Scope
+
+- JWT authentication with login throttling (5 attempts, 5-minute lock).
+- Three roles with dependency-based guards: admin, teacher, student.
+- Admin management: users, groups (incl. Excel import), modules and subjects.
+- Access control: linking groups to modules and teachers to subjects.
+- Lessons (video / pdf / test), homework upload and grading.
+- Tests with questions, options and results.
+- Student grade summary across submissions and tests.
+- Static file serving for uploaded photos and lesson documents.
+
+## Tech stack
+
+- FastAPI + Starlette
+- SQLAlchemy 2 (async) + asyncpg (PostgreSQL)
+- Alembic (migrations)
+- PyJWT + passlib/bcrypt
+- pandas + openpyxl (Excel group import)
+- Uvicorn / Gunicorn
+
+## Run
+
+Create and activate a virtual environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Create a local `.env` from the example and fill in real values:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`SECRET_KEY` is required — the app refuses to start without it.
+
+Create the PostgreSQL database, then apply migrations:
+
+```powershell
+alembic upgrade head
+```
+
+Start the development server:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+Production (example):
+
+```powershell
+gunicorn app.main:app -k uvicorn.workers.UvicornWorker
+```
+
+## Environment variables
+
+See [.env.example](.env.example). Key variables:
+
+- `DATABASE_URL` — PostgreSQL async URL (`postgresql+asyncpg://...`). Alembic converts the
+  driver to `psycopg2` automatically.
+- `SECRET_KEY` — required; long random string for JWT signing.
+- `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES` — JWT settings.
+- `PLACE_URL` — comma-separated allowed CORS origins. If empty, CORS is open but credentials
+  are disabled.
+- `ADMIN_IIN`, `ADMIN_PASSWORD`, `ADMIN_FULL_NAME`, `ADMIN_PHONE` — bootstrap admin. If IIN or
+  password is missing, no admin is created.
+
+Never commit the real `.env`. Only `.env.example` is tracked.
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — layers and project shape.
+- [docs/API.md](docs/API.md) — request paths (all routes, methods and required roles).
+
+## Notes
+
+The interactive API docs (`/docs`, `/redoc`, `/openapi.json`) are disabled by default in
+[app/main.py](app/main.py). Database tables are auto-created on startup as a development
+convenience; production should rely on `alembic upgrade head` (see ARCHITECTURE → Decisions
+To Revisit).
