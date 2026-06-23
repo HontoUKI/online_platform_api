@@ -81,6 +81,14 @@ def create_app() -> FastAPI:
         response.headers["Referrer-Policy"] = "no-referrer"
         # API отдаёт JSON и файлы (как attachment) — контенту нечего исполнять.
         response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        # HSTS только для HTTPS (в т.ч. за обратным прокси). На локальном http не шлём,
+        # иначе браузер запомнит и начнёт принудительно открывать localhost по https.
+        is_https = (
+            request.url.scheme == "https"
+            or request.headers.get("x-forwarded-proto") == "https"
+        )
+        if is_https:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
     # Настройка CORS

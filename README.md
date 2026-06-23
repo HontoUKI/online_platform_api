@@ -111,7 +111,8 @@ PostgreSQL service.
 - **Input validation:** IIN is constrained to 12 digits at the schema layer, so malformed or
   injection-shaped values are rejected (422) before any query.
 - **Response headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-  `Referrer-Policy: no-referrer`, and a restrictive `Content-Security-Policy`.
+  `Referrer-Policy: no-referrer`, a restrictive `Content-Security-Policy`, and `Strict-Transport-Security`
+  (HSTS) on HTTPS requests only (skipped on plain-http localhost).
 - **No dangerous sinks:** no `eval`/`exec`, `subprocess`, `pickle` or `yaml.load`.
 
 ## CI
