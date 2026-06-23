@@ -94,6 +94,19 @@ They cover password hashing/JWT ([tests/test_auth.py](tests/test_auth.py)), Pyda
 and the login throttle. The Alembic migration is exercised end-to-end in CI against a real
 PostgreSQL service.
 
+## Security
+
+- **SQL injection:** all database access goes through the SQLAlchemy ORM
+  (`select().where(...)`), so values are sent as bound parameters — never string-formatted into
+  SQL. There is no raw SQL, no `text()`, and `order_by` uses fixed model columns only (no
+  user-controlled identifiers). Parameterization is covered by
+  [tests/test_sql_injection.py](tests/test_sql_injection.py).
+- **Auth:** JWT (HS256) with a required `SECRET_KEY`; role guards per endpoint; passwords hashed
+  with bcrypt; login throttling.
+- **File downloads:** JWT-gated and resolved strictly inside `static/` (no path traversal); only
+  `static/photos` is served publicly. See [tests/test_files.py](tests/test_files.py).
+- **No dangerous sinks:** no `eval`/`exec`, `subprocess`, `pickle` or `yaml.load`.
+
 ## CI
 
 [.github/workflows/ci.yml](.github/workflows/ci.yml) runs on every push to `main` and on pull

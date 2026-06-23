@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import crud, models, schemas
@@ -99,9 +99,11 @@ async def create_subject(
     current_admin: models.User = Depends(get_current_admin_user)
 ):
     # Проверка: существует ли уже дисциплина с таким названием в этом модуле
+    # Точное сравнение без учёта регистра. ilike трактовал бы % и _ как шаблоны,
+    # поэтому сравниваем по lower() — название "%" не должно «совпадать со всем».
     query = select(models.Subject).where(
         models.Subject.module_id == module_id,
-        models.Subject.title.ilike(subject_data.title.strip())  # case-insensitive сравнение
+        func.lower(models.Subject.title) == subject_data.title.strip().lower()
     )
     existing = await db.execute(query)
     if existing.first():
