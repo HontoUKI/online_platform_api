@@ -111,4 +111,7 @@ Base URL: the server root. All paths below include their router prefix.
 
 | Method | Path | Access | Description |
 |--------|------|--------|-------------|
-| GET | `/files/download/{file_path:path}` | public | Download a stored file by path. |
+| GET | `/files/download/{file_path:path}` | auth | Download a stored file. Requires JWT; the path is resolved strictly inside `static/` (no traversal). |
+
+Public avatars are served separately via the `/static/photos` mount. Lesson materials and
+homework uploads are reachable **only** through this authenticated endpoint.

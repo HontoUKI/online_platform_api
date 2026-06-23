@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -64,8 +65,12 @@ def create_app() -> FastAPI:
         openapi_url=None,
         lifespan=lifespan,
     )
-    # Раздача папки static
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    # Публично раздаём только аватарки. Учебные материалы и домашние работы
+    # (static/lesson_docs) намеренно НЕ монтируются сюда — они доступны лишь через
+    # защищённый JWT эндпоинт /files/download, иначе их можно было бы скачать в обход
+    # авторизации напрямую по /static/lesson_docs/...
+    os.makedirs("static/photos", exist_ok=True)
+    app.mount("/static/photos", StaticFiles(directory="static/photos"), name="static-photos")
 
     # Настройка CORS
     app.add_middleware(
