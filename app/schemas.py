@@ -223,11 +223,18 @@ class Question(QuestionBase):
 class SubmissionCreate(BaseModel):
     comment: Optional[str] = None
 
+class SubmissionFileOut(BaseModel):
+    id: int
+    file_path: str
+
+    class Config:
+        from_attributes = True
+
 class SubmissionOut(BaseModel):
     id: int
     lesson_id: int
     user_id: int
-    file_path: str
+    files: List[SubmissionFileOut] = []
     comment: Optional[str] = None
     grade: Optional[int]
     student_name: Optional[str] = None

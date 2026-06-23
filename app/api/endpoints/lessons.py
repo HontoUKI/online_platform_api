@@ -15,6 +15,7 @@ from app.utils.uploads import (
     DOC_EXTS,
     MAX_DOC_BYTES,
     MAX_HOMEWORK_BYTES,
+    MAX_HOMEWORK_FILES,
 )
 from app import models, schemas
 
@@ -130,7 +131,7 @@ async def upload_lesson_file(
 @router.post("/{lesson_id}/submit-homework")
 async def submit_homework(
     lesson_id: int,
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(default=[]),
     comment: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_async_db),
     current_user=Depends(get_current_user)
@@ -139,34 +140,56 @@ async def submit_homework(
     if not lesson:
         raise HTTPException(status_code=404, detail="Урок не найден")
 
+    # Разрешаем работу с файлами и/или комментарием, но не пустую.
+    if not files and not (comment and comment.strip()):
+        raise HTTPException(status_code=400, detail="Добавьте файл или комментарий")
+    if len(files) > MAX_HOMEWORK_FILES:
+        raise HTTPException(
+            status_code=400, detail=f"Можно приложить не более {MAX_HOMEWORK_FILES} файлов"
+        )
+
+    # ДЗ принимаем в любом формате, но санитизируем расширение и ограничиваем
+    # СУММАРНЫЙ размер всех файлов. Файлы отдаются только как attachment.
+    prepared = []
+    total = 0
+    for f in files:
+        ext = safe_extension(f.filename, None)
+        content = await f.read()
+        total += len(content)
+        if total > MAX_HOMEWORK_BYTES:
+            limit_mb = MAX_HOMEWORK_BYTES // (1024 * 1024)
+            raise HTTPException(
+                status_code=413, detail=f"Суммарный размер файлов превышает {limit_mb} МБ"
+            )
+        prepared.append((ext, content))
+
     folder = f"static/homework/lesson_{lesson_id}"
     os.makedirs(folder, exist_ok=True)
 
-    # ДЗ принимаем в любом формате (тип не ограничиваем), но санитизируем расширение
-    # и ограничиваем размер. Файл отдаётся только как attachment через /files/download.
-    ext = safe_extension(file.filename, None)
-    content = await read_within_limit(file, MAX_HOMEWORK_BYTES)
-    file_name = f"{current_user.id}_{datetime.utcnow().timestamp():.0f}{ext}"
-    file_path = os.path.join(folder, file_name)
-
-    try:
-        with open(file_path, "wb") as f:
-            f.write(content)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Ошибка при сохранении файла")
-
+    # Создаём работу, затем привязываем к ней файлы (1НФ: ключ работы → строки файлов).
     submission = models.LessonSubmission(
         lesson_id=lesson_id,
         user_id=current_user.id,
         comment=comment,
-        file_path=file_path,
-        submitted_at=datetime.utcnow()
+        submitted_at=datetime.utcnow(),
     )
     db.add(submission)
+    await db.flush()  # получаем submission.id
+
+    for ext, content in prepared:
+        file_name = f"{current_user.id}_{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(folder, file_name)
+        try:
+            with open(file_path, "wb") as out:
+                out.write(content)
+        except Exception:
+            raise HTTPException(status_code=500, detail="Ошибка при сохранении файла")
+        db.add(models.SubmissionFile(submission_id=submission.id, file_path=file_path))
+
     await db.commit()
     await db.refresh(submission)
 
-    return {"detail": "Файл успешно загружен", "file": file_name}
+    return {"detail": "Файлы успешно загружены", "count": len(prepared)}
 
 
 @router.get("/{lesson_id}/submissions/files", response_model=List[schemas.SubmissionOut])
@@ -260,7 +283,11 @@ async def delete_submission(
     db: AsyncSession = Depends(get_async_db),
     current_user=Depends(get_current_user)
 ):
-    submission = await db.get(models.LessonSubmission, submission_id)
+    submission = await db.get(
+        models.LessonSubmission,
+        submission_id,
+        options=[selectinload(models.LessonSubmission.files)],
+    )
     if not submission:
         raise HTTPException(status_code=404, detail="Работа не найдена")
 
@@ -268,9 +295,10 @@ async def delete_submission(
     if submission.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
 
-    # Удалим файл
-    if submission.file_path and os.path.exists(submission.file_path):
-        os.remove(submission.file_path)
+    # Удаляем файлы с диска; строки submission_files уйдут каскадом.
+    for sf in submission.files:
+        if sf.file_path and os.path.exists(sf.file_path):
+            os.remove(sf.file_path)
 
     await db.delete(submission)
     await db.commit()

@@ -110,7 +110,6 @@ class LessonSubmission(Base):
     id = Column(Integer, primary_key=True, index=True)
     lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    file_path = Column(String(512), nullable=False)
     comment = Column(Text, nullable=True)
     grade = Column(Integer, nullable=True)
     submitted_at = Column(DateTime, default=datetime.utcnow)
@@ -118,6 +117,25 @@ class LessonSubmission(Base):
     # relationships
     lesson = relationship("Lesson", back_populates="submissions")
     user = relationship("User")
+    # 1НФ: файлы вынесены в отдельную таблицу (одна работа — до 5 файлов)
+    files = relationship(
+        "SubmissionFile",
+        back_populates="submission",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class SubmissionFile(Base):
+    __tablename__ = "submission_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(
+        Integer, ForeignKey("lesson_submissions.id", ondelete="CASCADE"), nullable=False
+    )
+    file_path = Column(String(512), nullable=False)
+
+    submission = relationship("LessonSubmission", back_populates="files")
 
 class Test(Base):
     __tablename__ = "tests"

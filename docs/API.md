@@ -87,7 +87,7 @@ Base URL: the server root. All paths below include their router prefix.
 | GET    | `/lessons/{lesson_id}` | auth | Get a lesson. |
 | DELETE | `/lessons/{lesson_id}` | teacher | Delete a lesson. |
 | POST   | `/lessons/upload/lesson-file` | teacher | Upload a lesson file (multipart). |
-| POST   | `/lessons/{lesson_id}/submit-homework` | auth | Submit homework files (multipart). |
+| POST   | `/lessons/{lesson_id}/submit-homework` | auth | Submit homework: up to 5 files (`files`, multipart) and/or a comment. |
 | GET    | `/lessons/{lesson_id}/my-submissions` | auth | Current user's submissions for a lesson. |
 | GET    | `/lessons/{lesson_id}/submissions/files` | teacher | All file submissions for a lesson. |
 | GET    | `/lessons/{lesson_id}/submissions/tests` | teacher | All test results for a lesson. |

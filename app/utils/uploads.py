@@ -24,7 +24,8 @@ EXCEL_EXTS = {".xls", ".xlsx"}
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024       # 5 МБ
 MAX_DOC_BYTES = 50 * 1024 * 1024        # 50 МБ
-MAX_HOMEWORK_BYTES = 20 * 1024 * 1024   # 20 МБ
+MAX_HOMEWORK_BYTES = 20 * 1024 * 1024   # 20 МБ суммарно на одну работу
+MAX_HOMEWORK_FILES = 5                  # до 5 файлов на одну работу
 MAX_EXCEL_BYTES = 10 * 1024 * 1024      # 10 МБ
 
 

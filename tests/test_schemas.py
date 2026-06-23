@@ -41,3 +41,28 @@ def test_login_accepts_valid_iin():
 def test_login_rejects_malformed_iin(bad_iin):
     with pytest.raises(ValidationError):
         schemas.LoginRequest(iin=bad_iin, password="secret")
+
+
+def test_submission_out_serializes_files_list():
+    # 1НФ: одна работа содержит список файлов (а не одно поле file_path).
+    class FakeFile:
+        def __init__(self, id, path):
+            self.id, self.file_path = id, path
+
+    class FakeSubmission:
+        id = 1
+        lesson_id = 2
+        user_id = 3
+        comment = "готово"
+        grade = None
+        student_name = None
+        submitted_at = __import__("datetime").datetime.now()
+        files = [FakeFile(10, "static/homework/lesson_2/a.pdf"),
+                 FakeFile(11, "static/homework/lesson_2/b.png")]
+
+    out = schemas.SubmissionOut.model_validate(FakeSubmission())
+    assert [f.file_path for f in out.files] == [
+        "static/homework/lesson_2/a.pdf",
+        "static/homework/lesson_2/b.png",
+    ]
+    assert not hasattr(out, "file_path")
