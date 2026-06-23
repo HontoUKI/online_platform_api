@@ -68,5 +68,3 @@ alembic upgrade head
 - **Refresh tokens.** Access tokens expire (default 30 min) with no refresh flow yet.
 - **Timezone-aware timestamps.** Submission/result timestamps and model defaults still use
   naive `datetime.utcnow`; migrate to timezone-aware values consistently.
-- **Consolidate role checks.** Most guards use the `UserRole` enum, but some endpoint-level
-  checks still compare against string literals.
