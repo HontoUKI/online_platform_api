@@ -1,4 +1,7 @@
 """Тесты Pydantic-схем."""
+import pytest
+from pydantic import ValidationError
+
 from app import schemas
 
 
@@ -24,3 +27,17 @@ def test_user_model_validate_from_attributes():
     user = schemas.User.model_validate(FakeORM())
     assert user.id == 7
     assert user.short_name == "Петров П."
+
+
+def test_login_accepts_valid_iin():
+    req = schemas.LoginRequest(iin="123456789012", password="secret")
+    assert req.iin == "123456789012"
+
+
+@pytest.mark.parametrize(
+    "bad_iin",
+    ["12345", "12345678901a", "' OR '1'='1", "", "1234567890123"],
+)
+def test_login_rejects_malformed_iin(bad_iin):
+    with pytest.raises(ValidationError):
+        schemas.LoginRequest(iin=bad_iin, password="secret")

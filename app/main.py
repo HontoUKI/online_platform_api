@@ -72,6 +72,17 @@ def create_app() -> FastAPI:
     os.makedirs("static/photos", exist_ok=True)
     app.mount("/static/photos", StaticFiles(directory="static/photos"), name="static-photos")
 
+    # Заголовки безопасности на каждый ответ.
+    @app.middleware("http")
+    async def security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        # API отдаёт JSON и файлы (как attachment) — контенту нечего исполнять.
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        return response
+
     # Настройка CORS
     app.add_middleware(
         CORSMiddleware,

@@ -6,7 +6,9 @@ from sqlalchemy.future import select
 from app.crud import get_user_by_iin, update_user_password, get_user_by_phone
 from app.models import User
 from app.schemas import PhoneUpdate, User, UserOut, PasswordChangeRequest
+from app.utils.uploads import safe_extension, read_within_limit, IMAGE_EXTS, MAX_IMAGE_BYTES
 import os
+import uuid
 
 router = APIRouter()
 
@@ -67,13 +69,14 @@ async def upload_photo(
     folder = "static/photos"
     os.makedirs(folder, exist_ok=True)
 
-    # Сохраняем файл
-    file_name = f"{user.id}_{photo.filename}"
+    # Имя генерируем сами (не доверяем клиентскому), тип — только изображения.
+    ext = safe_extension(photo.filename, IMAGE_EXTS)
+    content = await read_within_limit(photo, MAX_IMAGE_BYTES)
+    file_name = f"{user.id}_{uuid.uuid4().hex}{ext}"
     file_location = os.path.join(folder, file_name)
 
     try:
         with open(file_location, "wb") as f:
-            content = await photo.read()
             f.write(content)
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при сохранении файла")

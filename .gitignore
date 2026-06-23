@@ -18,6 +18,7 @@ env/
 # Uploaded user content (хранится вне репозитория)
 static/photos/
 static/lesson_docs/
+static/homework/
 
 # Logs
 *.log

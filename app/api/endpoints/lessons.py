@@ -9,6 +9,13 @@ import os
 
 from app.database import get_async_db
 from app.utils.auth import get_current_user, get_current_teacher_user
+from app.utils.uploads import (
+    safe_extension,
+    read_within_limit,
+    DOC_EXTS,
+    MAX_DOC_BYTES,
+    MAX_HOMEWORK_BYTES,
+)
 from app import models, schemas
 
 router = APIRouter()
@@ -106,13 +113,14 @@ async def upload_lesson_file(
     folder = "static/lesson_docs"
     os.makedirs(folder, exist_ok=True)
 
-    ext = os.path.splitext(file.filename)[-1]
+    ext = safe_extension(file.filename, DOC_EXTS)
+    content = await read_within_limit(file, MAX_DOC_BYTES)
     file_name = f"{uuid.uuid4().hex}{ext}"
     path = os.path.join(folder, file_name)
 
     try:
         with open(path, "wb") as f:
-            f.write(await file.read())
+            f.write(content)
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при сохранении файла")
 
@@ -134,13 +142,15 @@ async def submit_homework(
     folder = f"static/homework/lesson_{lesson_id}"
     os.makedirs(folder, exist_ok=True)
 
-    ext = os.path.splitext(file.filename)[-1]
+    # ДЗ принимаем в любом формате (тип не ограничиваем), но санитизируем расширение
+    # и ограничиваем размер. Файл отдаётся только как attachment через /files/download.
+    ext = safe_extension(file.filename, None)
+    content = await read_within_limit(file, MAX_HOMEWORK_BYTES)
     file_name = f"{current_user.id}_{datetime.utcnow().timestamp():.0f}{ext}"
     file_path = os.path.join(folder, file_name)
 
     try:
         with open(file_path, "wb") as f:
-            content = await file.read()
             f.write(content)
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при сохранении файла")

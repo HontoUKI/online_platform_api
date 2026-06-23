@@ -14,6 +14,7 @@ from app.models import teacher_module_table, user_group_table
 from app.models import Group as GroupModel, User as UserModel
 from app.schemas import Group, GroupCreate, User, UserCreate
 from app.utils.auth import get_current_admin_user
+from app.utils.uploads import safe_extension, read_within_limit, EXCEL_EXTS, MAX_EXCEL_BYTES
 
 router = APIRouter()
 
@@ -79,7 +80,8 @@ async def upload_group_from_excel(
     db: AsyncSession = Depends(get_async_db),
     current_admin: UserModel = Depends(get_current_admin_user),
 ):
-    content = await file.read()
+    safe_extension(file.filename, EXCEL_EXTS)
+    content = await read_within_limit(file, MAX_EXCEL_BYTES)
     df = pd.read_excel(BytesIO(content))
     df.columns = [col.strip() for col in df.columns]
 

@@ -1,7 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Union, Literal
+from typing import Annotated, List, Optional, Union, Literal
 from enum import Enum
 from datetime import datetime
+
+# ИИН РК — ровно 12 цифр. Единый тип с валидацией формата.
+IIN = Annotated[str, Field(pattern=r"^\d{12}$", description="ИИН: 12 цифр")]
 
 # Пользователи
 class PasswordChangeRequest(BaseModel):
@@ -14,7 +17,7 @@ class UserRole(str, Enum):
     admin = "admin"
 
 class UserBase(BaseModel):
-    iin: str
+    iin: IIN
     full_name: str
     phone: Optional[str] = None
     role: Optional[UserRole] = UserRole.student
@@ -46,7 +49,7 @@ class UserOut(BaseModel):
         from_attributes = True
 
 class PasswordResetRequest(BaseModel):
-    user_iin: str
+    user_iin: IIN
     new_password: str
 
 class PhoneUpdate(BaseModel):
@@ -54,7 +57,7 @@ class PhoneUpdate(BaseModel):
 
 # Авторизация
 class LoginRequest(BaseModel):
-    iin: str
+    iin: IIN
     password: str
 
 # Группы
@@ -279,7 +282,7 @@ class GroupModuleAccessCreate(BaseModel):
     module_id: int
 
 class TeacherSubjectAccessCreate(BaseModel):
-    teacher_iin: str
+    teacher_iin: IIN
     module_id: int
     subject_id: int
 

@@ -105,6 +105,13 @@ PostgreSQL service.
   with bcrypt; login throttling.
 - **File downloads:** JWT-gated and resolved strictly inside `static/` (no path traversal); only
   `static/photos` is served publicly. See [tests/test_files.py](tests/test_files.py).
+- **File uploads:** server-generated filenames (never the client's — closes an arbitrary-write
+  hole), size limits, and type allowlists; avatars are images only (no SVG → no inline XSS).
+  See [app/utils/uploads.py](app/utils/uploads.py) and [tests/test_uploads.py](tests/test_uploads.py).
+- **Input validation:** IIN is constrained to 12 digits at the schema layer, so malformed or
+  injection-shaped values are rejected (422) before any query.
+- **Response headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: no-referrer`, and a restrictive `Content-Security-Policy`.
 - **No dangerous sinks:** no `eval`/`exec`, `subprocess`, `pickle` or `yaml.load`.
 
 ## CI
