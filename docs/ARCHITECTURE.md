@@ -1,5 +1,12 @@
 # Architecture
 
+## Background
+
+The project started as an MVP built under tight deadlines, so the first version favoured
+shipping working features over polish. Some traces of that remain (and are being cleaned up
+incrementally): occasional over-verbose comments, a few naming inconsistencies, and the
+auto-create-tables fallback on startup. The notes in "Decisions To Revisit" track what's left.
+
 ## Shape
 
 The backend is a single FastAPI application assembled in [app/main.py](../app/main.py),

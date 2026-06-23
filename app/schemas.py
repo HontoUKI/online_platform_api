@@ -89,8 +89,7 @@ class LessonBase(BaseModel):
 
 class LessonCreate(LessonBase):
     test_id: Optional[int] = None
-    description: Optional[str] = None  
-    pass
+    description: Optional[str] = None
 
 class LessonUpdate(BaseModel):
     title: Optional[str] = None

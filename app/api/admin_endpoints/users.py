@@ -12,6 +12,7 @@ from app.models import (
     Result,
     Subject,
     User as UserModel,
+    UserRole,
     user_group_table,
     teacher_module_table,
 )
@@ -62,7 +63,7 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    if user.role == "admin":
+    if user.role == UserRole.admin:
         raise HTTPException(status_code=403, detail="Нельзя удалить администратора")
 
     await db.execute(delete(Result).where(Result.user_id == user.id))

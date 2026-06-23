@@ -207,9 +207,9 @@ async def get_lesson_file_submissions(
     if not subject:
         raise HTTPException(404, detail="Предмет не найден")
 
-    if current_user.role == "teacher" and subject.teacher_id != current_user.id:
+    if current_user.role == models.UserRole.teacher and subject.teacher_id != current_user.id:
         raise HTTPException(403, detail="Нет доступа к уроку")
-    elif current_user.role != "admin" and current_user.role != "teacher":
+    elif current_user.role not in (models.UserRole.admin, models.UserRole.teacher):
         raise HTTPException(403, detail="Недостаточно прав")
 
     result = await db.execute(
@@ -245,9 +245,9 @@ async def get_lesson_test_results(
     if not subject:
         raise HTTPException(404, detail="Предмет не найден")
 
-    if current_user.role == "teacher" and subject.teacher_id != current_user.id:
+    if current_user.role == models.UserRole.teacher and subject.teacher_id != current_user.id:
         raise HTTPException(403, detail="Нет доступа к уроку")
-    elif current_user.role != "admin" and current_user.role != "teacher":
+    elif current_user.role not in (models.UserRole.admin, models.UserRole.teacher):
         raise HTTPException(403, detail="Недостаточно прав")
 
     result = await db.execute(

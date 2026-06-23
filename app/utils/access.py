@@ -8,7 +8,7 @@ from app import models
 
 
 async def has_access_to_module(db: AsyncSession, user: models.User, module_id: int) -> bool:
-    if user.role == "admin":
+    if user.role == UserRole.admin:
         return True
 
     # Получить модуль с группами и предметами
@@ -32,7 +32,7 @@ async def has_access_to_module(db: AsyncSession, user: models.User, module_id: i
         return True
 
     # Преподаватель модуля имеет доступ через предметы
-    if user.role == "teacher":
+    if user.role == UserRole.teacher:
         for subject in module.subjects:
             if subject.teacher_id == user.id:
                 return True
@@ -41,7 +41,7 @@ async def has_access_to_module(db: AsyncSession, user: models.User, module_id: i
 
 
 async def can_edit_module(db: AsyncSession, user: models.User, module_id: int) -> bool:
-    if user.role == "admin":
+    if user.role == UserRole.admin:
         return True
 
     result = await db.execute(
@@ -54,7 +54,7 @@ async def can_edit_module(db: AsyncSession, user: models.User, module_id: int) -
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
 
-    if user.role == "teacher":
+    if user.role == UserRole.teacher:
         for subject in module.subjects:
             if subject.teacher_id == user.id:
                 return True
@@ -102,9 +102,9 @@ async def assign_teacher_to_module(db: AsyncSession, module_id: int, teacher_iin
     if not module or not teacher:
         raise HTTPException(status_code=404, detail="Дисциплина или Преподаватель не найдены")
 
-    if teacher.role != "teacher":
+    if teacher.role != UserRole.teacher:
         raise HTTPException(status_code=400, detail="Пользователь не является преподавателем")
-    
+
     if teacher not in module.teachers:
         module.teachers.append(teacher)
         await db.commit()
@@ -134,7 +134,7 @@ async def assign_teacher_to_subject(db: AsyncSession, subject_id: int, teacher_i
 
 
 async def check_user_access_to_module(db: AsyncSession, user: models.User, module_id: int) -> bool:
-    if user.role == "admin":
+    if user.role == UserRole.admin:
         return True
 
     # Получить ID групп пользователя

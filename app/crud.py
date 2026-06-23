@@ -121,7 +121,7 @@ async def update_subject(db: AsyncSession, subject_id: int, subject_in: schemas.
     if "teacher_iin" in update_data:
         teacher_result = await db.execute(select(models.User).where(models.User.iin == update_data["teacher_iin"]))
         teacher = teacher_result.scalars().first()
-        if not teacher or teacher.role != "teacher":
+        if not teacher or teacher.role != models.UserRole.teacher:
             raise HTTPException(status_code=404, detail="Преподаватель с таким ИИН не найден")
         update_data["teacher_id"] = teacher.id
         del update_data["teacher_iin"]

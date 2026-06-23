@@ -180,7 +180,7 @@ async def delete_group_with_users(
         raise HTTPException(status_code=404, detail="Группа не найдена")
 
     # Оставляем админов — удаляем только студентов и преподавателей
-    users_to_delete = [user for user in group.users if user.role != "admin"]
+    users_to_delete = [user for user in group.users if user.role != models.UserRole.admin]
     user_ids = [user.id for user in users_to_delete]
 
     if user_ids:
