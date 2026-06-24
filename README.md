@@ -115,8 +115,17 @@ Open http://localhost:8089 for the web UI, or run headless:
 locust -f loadtest/locustfile.py --host http://localhost:8000 --headless -u 50 -r 5 -t 1m
 ```
 
-Note: login is intentionally CPU-bound (bcrypt), so it dominates latency — to benchmark read
-throughput, keep the login in `on_start` (once per user) as the scenario already does.
+Notes:
+
+- **Test a production-like target, not the dev server.** `uvicorn --reload` is a single worker
+  and will start refusing connections under load (`ConnectionRefusedError`), which measures the
+  dev server collapsing rather than the API. Run against multiple workers, e.g.
+  `gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 4`.
+- **Login is CPU-bound (bcrypt)**, so it dominates latency and serializes on a single worker.
+  The scenario logs in once per user (`on_start`) to isolate read throughput.
+- **Watch the DB pool.** `database.py` allows `pool_size=10 + max_overflow=20` (30 connections);
+  if concurrency far exceeds that, requests wait and can surface as `500`s. Size the pool and
+  worker count to the expected concurrency, and ramp users gradually (`-r`) to find the knee.
 
 ## Security
 
