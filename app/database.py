@@ -17,13 +17,22 @@ if DATABASE_URL is None:
     logging.error("DATABASE_URL не выставлен в переменный окружения")
     exit(1)
 
+# Размер пула на ОДИН процесс-воркер. Важно: при N воркерах суммарно открывается
+# до N * (POOL_SIZE + MAX_OVERFLOW) соединений — это число должно укладываться в
+# postgres max_connections (по умолчанию 100), иначе под нагрузкой часть запросов
+# получит 500 («too many connections»). Поэтому дефолты консервативные и настраиваются.
+POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
+MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "30"))  # ждать свободное соединение, сек
+
 # Создание асинхронного движка SQLAlchemy
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,         # Установить True для вывода SQL-запросов в консоль (отладка)
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=POOL_SIZE,
+    max_overflow=MAX_OVERFLOW,
+    pool_timeout=POOL_TIMEOUT,
     connect_args={"timeout": 10},  # asyncpg: тайм-аут установки соединения, сек
 )
 

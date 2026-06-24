@@ -125,9 +125,14 @@ Notes:
     (`gunicorn` does not run on Windows).
 - **Login is CPU-bound (bcrypt)**, so it dominates latency and serializes on a single worker.
   The scenario logs in once per user (`on_start`) to isolate read throughput.
-- **Watch the DB pool.** `database.py` allows `pool_size=10 + max_overflow=20` (30 connections);
-  if concurrency far exceeds that, requests wait and can surface as `500`s. Size the pool and
-  worker count to the expected concurrency, and ramp users gradually (`-r`) to find the knee.
+- **Mind the DB pool vs. `max_connections`.** Each worker keeps its own pool of up to
+  `DB_POOL_SIZE + DB_MAX_OVERFLOW` connections (defaults 5 + 10 = 15). With `N` workers the total
+  is `N × 15`, which **must stay under Postgres `max_connections`** (default 100) — otherwise
+  excess requests get `500 too many connections`. A 4-worker / `10+20` pool (120 > 100) was the
+  cause of the `500`s seen in load testing; the defaults are now conservative and tunable via env.
+  `DB_POOL_TIMEOUT` makes a request wait for a free connection (queue) instead of failing fast.
+  To scale beyond `max_connections`, raise it or put PgBouncer in front. Ramp users gradually
+  (`-r`) to find the knee.
 
 ## Security
 
