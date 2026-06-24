@@ -94,6 +94,30 @@ They cover password hashing/JWT ([tests/test_auth.py](tests/test_auth.py)), Pyda
 and the login throttle. The Alembic migration is exercised end-to-end in CI against a real
 PostgreSQL service.
 
+## Load testing
+
+A [Locust](https://locust.io) scenario lives in [loadtest/locustfile.py](loadtest/locustfile.py):
+each virtual user logs in once and then loops authenticated reads (`/access/my-modules`,
+`/lessons/student/grades`, `/auth/check`). It is a manual tool — run it against a running
+instance, not in CI.
+
+Start the API, then point Locust at it (credentials come from the environment):
+
+```powershell
+$env:LOAD_TEST_IIN = "000000000000"
+$env:LOAD_TEST_PASSWORD = "<password>"
+locust -f loadtest/locustfile.py --host http://localhost:8000
+```
+
+Open http://localhost:8089 for the web UI, or run headless:
+
+```powershell
+locust -f loadtest/locustfile.py --host http://localhost:8000 --headless -u 50 -r 5 -t 1m
+```
+
+Note: login is intentionally CPU-bound (bcrypt), so it dominates latency — to benchmark read
+throughput, keep the login in `on_start` (once per user) as the scenario already does.
+
 ## Security
 
 - **SQL injection:** all database access goes through the SQLAlchemy ORM

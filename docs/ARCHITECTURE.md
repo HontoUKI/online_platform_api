@@ -25,6 +25,7 @@ app/
 migrations/      Alembic environment and versioned migrations
 static/          Served uploads (photos, lesson documents)
 tests/           pytest unit tests (auth, schemas, login throttle)
+loadtest/        Locust load-test scenario (manual)
 ```
 
 ## Layers
