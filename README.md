@@ -119,8 +119,10 @@ Notes:
 
 - **Test a production-like target, not the dev server.** `uvicorn --reload` is a single worker
   and will start refusing connections under load (`ConnectionRefusedError`), which measures the
-  dev server collapsing rather than the API. Run against multiple workers, e.g.
-  `gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 4`.
+  dev server collapsing rather than the API. Use multiple workers:
+  - Local (incl. Windows): `uvicorn app.main:app --workers 4` (no `--reload`).
+  - Production (Linux): `gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 4`
+    (`gunicorn` does not run on Windows).
 - **Login is CPU-bound (bcrypt)**, so it dominates latency and serializes on a single worker.
   The scenario logs in once per user (`on_start`) to isolate read throughput.
 - **Watch the DB pool.** `database.py` allows `pool_size=10 + max_overflow=20` (30 connections);
